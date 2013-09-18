@@ -39,7 +39,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
     <script type="text/javascript">
-    
+        function filterFromQuerryString() {
+            if (!window.location || !window.location.search)
+                return "";
+
+            // Not the most perfect parsing, but at least some disaster revovery; actually only expecting a filter parameter
+            var keyValue = window.location.search.slice(1).split(/[=&]/);
+
+            filterIndex = keyValue.indexOf("filter");
+            // The filter value should be right after the filter string in the array;
+            // Make sure we don't look for it out of bounds.
+            if (filterIndex < 0 || (filterIndex > keyValue.length - 1))
+                return "";
+
+            return keyValue[filterIndex + 1];
+        }
+
         // Test key for BrowserScope test suite
         var _bTestKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgICAmOeACgw'
         var browserscopeURL = "http://www.browserscope.org/user/tests/table/" + _bTestKey + "?o=json&v=";
@@ -88,7 +103,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         function getData(version) {
             $("#waiting-indicator").show();
             $.ajax({
-                    url: browserscopeURL + version, 
+                    url: browserscopeURL + version,
                     cache: false,
                     crossDomain: true,
                     dataType: "jsonp"}
@@ -96,7 +111,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
 
         function getDataHandler(result) {
-            bscope_results = massageTestResults(result);
+            bscope_results = massageTestResults(result, filterFromQuerryString());
             $("#waiting-indicator").hide();
             drawTable(bscope_results);
         }
@@ -143,24 +158,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             changeActionWell(browserLabelDepth);
             $("#support-precentage").html(percent + "%");
             $("#test-display-toggle").css("display","block");
-            
+
         }
 
     </script>
 
     <script type="text/javascript" src="qunit/qunit.js"></script>
-    <script type="text/javascript"> 
+    <script type="text/javascript">
 
-    
+
     // Beacon object with test results for Browserscope.
     // key = string test name
     // value = numeric value (1 means pass, 0 means fail)
     var _bTestResults = {}
-    
+
     // Timeout for async tests
     QUnit.config.testTimeout = 30000
 
-    //Setting tests to start on user input 
+    //Setting tests to start on user input
     QUnit.config.autostart = false;
 
     QUnit.config.reorder = false;
@@ -172,31 +187,31 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
     // Build-up the test results beacon for BrowserScope.org
     QUnit.testDone = function(obj){
-        var testName = obj.module + " : " + obj.name 
+        var testName = obj.module + " : " + obj.name
 
         if (!obj.failed && obj.total === obj.passed){
             _bTestResults[testName] = 1
-        } 
+        }
         else{
             _bTestResults[testName] = 0
         }
-    }  
-    
+    }
+
     // If the user agreed to publish results to BrowserScope.org, go for it!
     QUnit.done = function(obj){
-            
+
         var container = document.querySelector('#qunit-testrunner-toolbar'),
             resultsLink = document.createElement('a'),
-            runsLink = document.createElement('a') 
-        
+            runsLink = document.createElement('a')
+
         // Link to aggregated test results on Browserscope.org
-        resultsLink.href = 'http://www.browserscope.org/user/tests/table/' + _bTestKey + '?o=html&v=3'   
-        resultsLink.textContent = 'Results on Browserscope'  
-        
+        resultsLink.href = 'http://www.browserscope.org/user/tests/table/' + _bTestKey + '?o=html&v=3'
+        resultsLink.textContent = 'Results on Browserscope'
+
         // Link to test runs table on Browserscope.org
-        runsLink.href = 'http://www.browserscope.org/browse?category=usertest_'+ _bTestKey  
-        runsLink.textContent = 'Test Runs on Browserscope'    
-        
+        runsLink.href = 'http://www.browserscope.org/browse?category=usertest_'+ _bTestKey
+        runsLink.textContent = 'Test Runs on Browserscope'
+
         container.appendChild(resultsLink)
         container.appendChild(document.createElement('br'))
         container.appendChild(runsLink)
@@ -227,7 +242,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
                 <form id="run-tests">
                     <input class="btn btn-primary btn-large" type="submit" name="submit" value="Run Tests" /><br />
-                </form>    
+                </form>
             </div>
         </div>
 
@@ -260,6 +275,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         <div id="qunit"></div>
     </div>
 
-    
+
 </body>
 </html>

@@ -25,7 +25,7 @@ var browserScopeVersions = {
         "browsers-all": {urlFlag:"3", label:"All Browsers", depth:"version"},
         "browsers-major": {urlFlag:"1", label:"Major Versions", depth:"major"},
         "browsers-family": {urlFlag:"0", label:"Browser Families", depth:"browser"}
-};            
+};
 
 function notImplemented() {
     alert("Not implemented yet");
@@ -225,14 +225,14 @@ function changeActionWell(browserVersionDepth) {
     $("#action-well").html(htmlContent);
 
     // Would rather do this by changing the class, but there is an issue with:
-    // Changing a class on a column in a table styled by Bootstrap in Chrome. 
+    // Changing a class on a column in a table styled by Bootstrap in Chrome.
     // Will track down issue and report to relevant project.
     $("#" + browserTableID).css("background-color", "#fcf8e3");
     $("." + browserTableID).css("background-color", "#fcf8e3");
     $("thead th").css("background-color", "#FFF");
 }
 
-function massageTestResults(results) {
+function massageTestResults(results, filter) {
     var outputResults = {};
     var index;
     var testIndex;
@@ -244,12 +244,20 @@ function massageTestResults(results) {
             continue;
         }
 
+        var filtered_pass = 0;
         var newSubResults = [];
 
         for (testIndex in obj.results) {
+            var testTitle = testIndex.split(":");
+            // Skip this test if the name does not match the filter
+            if (filter && testTitle[1].indexOf(filter) < 0)
+                continue;
+
             var subResultsArray = [];
             var subResultsFromObj = obj.results[testIndex];
-            var testTitle = testIndex.split(":");
+            if (+subResultsFromObj.result)
+                filtered_pass ++;
+
             subResultsFromObj.name = testTitle[1];
             subResultsFromObj.type = testTitle[0];
             newSubResults.push(subResultsFromObj);
@@ -257,6 +265,17 @@ function massageTestResults(results) {
         newSubResults.sort(testSort);
         obj.results = newSubResults;
         obj.name = index;
+
+        // Only change the summary score if we actually filtered the results
+        // Using Math.round on non-filtered results yields the exact same
+        // values as the old browser scope ones.
+        if (filter) {
+            obj.summary_score =
+                    newSubResults.length ?
+                    Math.round(100 * filtered_pass / newSubResults.length) :
+                    0;
+        }
+
         newResults.push(obj);
     }
     newResults.sort(browserSort);
