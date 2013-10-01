@@ -39,28 +39,35 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
     <script type="text/javascript">
-        function filterFromQuerryString() {
-            if (!window.location || !window.location.search)
-                return "";
-
-            // Not the most perfect parsing, but at least some disaster revovery; actually only expecting a filter parameter
-            var keyValue = window.location.search.slice(1).split(/[=&]/);
-
-            filterIndex = keyValue.indexOf("filter");
-            // The filter value should be right after the filter string in the array;
-            // Make sure we don't look for it out of bounds.
-            if (filterIndex < 0 || (filterIndex > keyValue.length - 1))
-                return "";
-
-            return keyValue[filterIndex + 1];
-        }
-
         // Test key for BrowserScope test suite
         var _bTestKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgICAmOeACgw'
         var browserscopeURL = "http://www.browserscope.org/user/tests/table/" + _bTestKey + "?o=json&v=";
         var currentBrowserChoice = "browsers-major";
         var browserscopeV = browserScopeVersionTranslate(currentBrowserChoice);
         var bscope_results;
+
+        function setFilterLabel() {
+            var filter = QUnit.config.filter;
+            if(filter) {
+                // QUnit internally uses its own urlParams to build the URL. Hack to temporarily
+                // remove the filter parameter, so that we can rebuild the entier URL without it
+                var oldFilterValue = QUnit.urlParams["filter"];
+                delete QUnit.urlParams["filter"];
+                var noFilterURL = QUnit.url();
+
+                // Set back the original params
+                QUnit.urlParams["filter"] = oldFilterValue;
+
+                console.log(noFilterURL);
+                var filterInnerHtml =
+                        ' (<a title="Clear filter" href="' +
+                        noFilterURL + '">filtered by \'' + filter + '\'</a>)';
+                $(".filter-label").each(function() {
+                        $(this).title="";
+                        $(this).html(filterInnerHtml);
+                    });
+            }
+        }
 
         $(document).ready(function() {
             getData(browserscopeV);
@@ -71,6 +78,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             $('#manual a').click(showManualTests);
             $('#test-display-toggle').click(showTests);
             $("#browser-selector a").click(toggleBrowsers);
+
+            var filter = QUnit.config.filter;
+            if(filter)
+                setFilterLabel();
         });
 
         function resetTabs() {
@@ -111,7 +122,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
 
         function getDataHandler(result) {
-            bscope_results = massageTestResults(result, filterFromQuerryString());
+            bscope_results = massageTestResults(result, QUnit.config.filter);
             $("#waiting-indicator").hide();
             drawTable(bscope_results);
         }
@@ -156,6 +167,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var browserLabelDepth = browserScopeDepthTranslate(currentBrowserChoice);
             var percent = calculatePercentage(results);
             changeActionWell(browserLabelDepth);
+            setFilterLabel();
             $("#support-precentage").html(percent + "%");
             $("#test-display-toggle").css("display","block");
 
@@ -197,7 +209,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
     }
 
-    // If the user agreed to publish results to BrowserScope.org, go for it!
     QUnit.done = function(obj){
 
         var container = document.querySelector('#qunit-testrunner-toolbar'),
@@ -228,7 +239,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <div class="container">
         <div class="row">
             <header class="span6">
-                 <h1 id="bscope-test-title">CSS Blending Support</h1>
+                <h1 id="bscope-test-title">CSS Blending Support<span class="filter-label"/></h1>
                 <div id="bscope-test-desc">Check the support for CSS Blending across browsers. The matrix below contains the features in the latest CSS Blending Working Draft from the W3C.</div>
 
                 <ul>
@@ -238,7 +249,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     </ul>
             </header>
             <div id="action-well" class="alert alert-info span5">
-                <h2>Check CSS Blending Support in your browser</h2>
+                <h2>Check CSS Blending Support <span class="filter-label"/> in your browser</h2>
 
                 <form id="run-tests">
                     <input class="btn btn-primary btn-large" type="submit" name="submit" value="Run Tests" /><br />

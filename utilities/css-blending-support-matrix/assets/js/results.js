@@ -215,7 +215,7 @@ function changeActionWell(browserVersionDepth) {
 
     var htmlContent = '<div id="test-results">';
     htmlContent += '<p>We think that you are using <strong>' + browserBeingUsed + '</strong> for your browser.  <a href="#">No?</a></p>';
-    htmlContent += '<p id="support-results">Your Browser supports<br /> <span id="support-precentage"></span> of CSS Blending features</p>';
+    htmlContent += '<p id="support-results">Your Browser supports<br /> <span id="support-precentage"></span> of CSS Blending features<span class="filter-label"/></p>';
 
     if ($('#publish-results').is(':checked')) {
         htmlContent += '<p>Thank you for sharing your results</p>';
@@ -255,7 +255,7 @@ function massageTestResults(results, filter) {
 
             var subResultsArray = [];
             var subResultsFromObj = obj.results[testIndex];
-            if (+subResultsFromObj.result)
+            if (parseInt(subResultsFromObj.result) == 1)
                 filtered_pass ++;
 
             subResultsFromObj.name = testTitle[1];
